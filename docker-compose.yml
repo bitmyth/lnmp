@@ -1,0 +1,60 @@
+version: "2"
+
+services:
+  mysql:
+      container_name: mysql_container
+      image: mysql:5.7
+      environment:
+       - MYSQL_ROOT_PASSWORD=123
+       - MYSQL_DATABASE=test
+       - TZ=Asia/Shanghai
+      ports:
+       - "3306:3306"
+      volumes:
+       - $PWD/mysql:/var/lib/mysql
+      networks:
+        - net
+
+  nginx:
+      container_name: nginx_container
+      image: nginx
+      depends_on:
+       - fpm
+      environment:
+       - WORDPRESS_DB_PASSWORD=123456
+      ports:
+       - "80:80"
+      #working_dir: $PWD
+      volumes:
+       - $PWD/nginx/conf.d:/etc/nginx/conf.d
+       - $PWD/nginx:/usr/share/nginx/html
+       - $PWD/nginx:/var/www/html
+      networks:
+        - net
+        #net:
+        #  ipv4_address: 127.0.0.1
+
+  fpm:
+      container_name : phpfpm_container
+      image: bitmyth/fpm:0.1
+      links:
+       - mysql
+      ports:
+       - "9001:9000"
+      volumes:
+       - $PWD/fpm/conf.d:/usr/local/etc
+       - $PWD/fpm/composer.phar:/usr/local/bin/composer
+       - $PWD/nginx:/var/www/html
+      tty: true
+      #entrypoint: bash -c "php-fpm"
+      networks:
+        - net
+        #net:
+        #  ipv4_address: 127.0.0.1
+networks:
+  net:
+    driver: bridge
+    #ipam:
+    #  driver: default
+    #  config:
+    #    - subnet: 192.168.0.0/24
